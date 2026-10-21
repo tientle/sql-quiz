@@ -22,7 +22,7 @@ st.caption(
     "SQL interview practice with real Sephora products "
     "and 10,000 sampled reviews."
 )
-
+st.divider()
 
 # -----------------------------------
 # Authentication
@@ -175,10 +175,67 @@ with st.sidebar:
         "10,000 Sephora reviews."
     )
 
+st.subheader("Database Reference")
+st.caption("Available tables and columns")
+
+with st.expander("products"):
+    st.code(
+        """product_id          TEXT (PK)
+product_name        TEXT
+brand_name          TEXT
+price_usd           NUMERIC
+rating              NUMERIC
+loves_count         INTEGER
+primary_category    TEXT
+secondary_category  TEXT
+sephora_exclusive   BOOLEAN""",
+        language="text"
+    )
+
+with st.expander("reviews"):
+    st.code(
+        """review_id        BIGINT (PK)
+product_id       TEXT (FK)
+author_id        TEXT
+rating           INTEGER
+is_recommended   BOOLEAN
+submission_time  DATE
+review_text      TEXT
+skin_type        TEXT""",
+        language="text"
+    )
+
+st.caption(
+    "Relationship: reviews.product_id "
+    "references products.product_id"
+)
+
 
 # -----------------------------------
 # Question selection
 # -----------------------------------
+
+
+# -----------------------------------
+# Question selection
+# -----------------------------------
+
+st.markdown("""
+<style>
+div[data-testid="stSelectbox"] {
+    background-color: #FFF0F5;
+    padding: 18px;
+    border: 2px solid #E78BAA;
+    border-radius: 12px;
+}
+
+div[data-testid="stSelectbox"] label p {
+    color: #AD4269;
+    font-size: 18px;
+    font-weight: 700;
+}
+</style>
+""", unsafe_allow_html=True)
 
 selected_id = st.selectbox(
     "Choose a question",
@@ -187,6 +244,7 @@ selected_id = st.selectbox(
         f"Question {i}: {QUESTIONS[i - 1]['title']}"
     )
 )
+
 
 question = QUESTIONS[selected_id - 1]
 
@@ -204,13 +262,15 @@ st.caption(
 
 st.write(question["prompt"])
 
-
 # -----------------------------------
-# Hint
+# Hint and reference solution
 # -----------------------------------
 
-with st.expander("💡 Show Hint / Expected SQL"):
-    st.write("Example solution:")
+with st.expander("Show Hint"):
+    st.info(question["hint"])
+
+with st.expander("Show Expected SQL & Results"):
+    st.write("Reference SQL solution:")
 
     st.code(
         question["solution"],
@@ -219,6 +279,7 @@ with st.expander("💡 Show Hint / Expected SQL"):
 
     st.write("Expected result:")
     st.write(question["expected"])
+
 
 
 # -----------------------------------
@@ -258,7 +319,7 @@ with col1:
 
 with col2:
     save_clicked = st.button(
-        "💾 Save Answer",
+        "Save Answer",
         use_container_width=True
     )
 

@@ -6,6 +6,8 @@ from contextlib import closing
 import pandas as pd
 import psycopg2
 
+from pglast import parse_sql, ast
+
 
 # Reject potentially dangerous SQL commands.
 BLOCKED = re.compile(
@@ -17,6 +19,7 @@ BLOCKED = re.compile(
 )
 
 
+
 def validate_sql(query):
     query = query.strip()
 
@@ -26,21 +29,25 @@ def validate_sql(query):
     if len(query) > 10000:
         raise ValueError("Query is too long.")
 
-    # Allow one optional trailing semicolon.
-    if query.endswith(";"):
-        query = query[:-1].strip()
+    try:
+        statements = parse_sql(query)
+    except Exception:
+        raise ValueError("Invalid SQL syntax.")
 
-    # Restrict students to one statement without comments.
-    if any(x in query for x in (";", "--", "/*", "*/", "$$")):
+    if len(statements) != 1:
         raise ValueError("Only one SQL statement is allowed.")
 
-    if not re.match(r"^(SELECT|WITH)\b", query, re.IGNORECASE):
+    statement = statements[0].stmt
+
+    if not isinstance(statement, ast.SelectStmt):
         raise ValueError("Only SELECT queries are allowed.")
 
+    # Defense in depth: reject suspicious commands and functions.
     if BLOCKED.search(query):
         raise ValueError("This SQL command is not allowed.")
 
     return query
+
 
 
 def run_query(query):

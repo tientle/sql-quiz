@@ -12,6 +12,10 @@ QUESTIONS = [
             "with no matching reviews. Order by product_id ascending "
             "and return the first 10."
         ),
+        "hint": (
+            "Consider using NOT EXISTS with a correlated "
+            "subquery to find products without matching reviews."
+        ),
         "solution": """
 SELECT p.product_id, p.product_name, p.brand_name
 FROM products AS p
@@ -37,6 +41,10 @@ LIMIT 10;
             "Find brands with at least 100 sampled reviews. "
             "Return brand_name and review_count. Sort by review_count "
             "descending, then brand_name ascending."
+        ),
+        "hint": (
+            "JOIN products and reviews, then use GROUP BY "
+            "and HAVING to filter brands by review count."
         ),
         "solution": """
 SELECT
@@ -64,21 +72,32 @@ ORDER BY review_count DESC, p.brand_name;
             "recommended, and not_recommended. Exclude reviews where "
             "is_recommended is NULL. Sort alphabetically by skin_type."
         ),
+        "hint": (
+            "Use conditional aggregation with CASE WHEN "
+            "to count recommended and non-recommended reviews."
+        ),
         "solution": """
 SELECT
     skin_type,
     COUNT(*) AS total_reviews,
-    SUM(CASE WHEN is_recommended = TRUE
-        THEN 1 ELSE 0 END) AS recommended,
-    SUM(CASE WHEN is_recommended = FALSE
-        THEN 1 ELSE 0 END) AS not_recommended
+    SUM(
+        CASE WHEN is_recommended = TRUE
+            THEN 1 ELSE 0 END
+    ) AS recommended,
+    SUM(
+        CASE WHEN is_recommended = FALSE
+            THEN 1 ELSE 0 END
+    ) AS not_recommended
 FROM reviews
 WHERE skin_type IS NOT NULL
   AND is_recommended IS NOT NULL
 GROUP BY skin_type
 ORDER BY skin_type;
 """,
-        "expected": "One row per skin type with recommendation counts.",
+        "expected": (
+            "One row per skin type with total review counts, "
+            "recommended counts, and not-recommended counts."
+        ),
     },
     {
         "id": 4,
@@ -95,6 +114,11 @@ ORDER BY skin_type;
             "Return brand_name, total_reviews, and recommendation_rate "
             "rounded to two decimals. Sort by rate descending, "
             "then brand name ascending."
+        ),
+        "hint": (
+            "Calculate the percentage of TRUE recommendations "
+            "using conditional aggregation. Consider NULLIF "
+            "to protect against division by zero."
         ),
         "solution": """
 SELECT
@@ -115,7 +139,11 @@ GROUP BY p.brand_name
 HAVING COUNT(*) >= 30
 ORDER BY recommendation_rate DESC, p.brand_name;
 """,
-        "expected": "Qualifying brands ranked by recommendation rate.",
+        "expected": (
+            "One row per qualifying brand showing its eligible "
+            "review count and recommendation percentage, "
+            "ranked from highest to lowest."
+        ),
     },
     {
         "id": 5,
@@ -131,6 +159,11 @@ ORDER BY recommendation_rate DESC, p.brand_name;
             "in each non-null category. Break ties using the "
             "alphabetically first product_id. Sort by category."
         ),
+        "hint": (
+            "Use ROW_NUMBER() with PARTITION BY to rank "
+            "products within each primary category. "
+            "A CTE can help you filter to the top product."
+        ),
         "solution": """
 WITH ranked_products AS (
     SELECT
@@ -140,8 +173,9 @@ WITH ranked_products AS (
         loves_count,
         ROW_NUMBER() OVER (
             PARTITION BY primary_category
-            ORDER BY loves_count DESC NULLS LAST,
-                     product_id ASC
+            ORDER BY
+                loves_count DESC NULLS LAST,
+                product_id ASC
         ) AS rn
     FROM products
     WHERE primary_category IS NOT NULL
@@ -155,6 +189,9 @@ FROM ranked_products
 WHERE rn = 1
 ORDER BY primary_category;
 """,
-        "expected": "One highest-loved product per primary category.",
+        "expected": (
+            "One row per primary category showing the product "
+            "with the highest loves_count."
+        ),
     },
 ]
