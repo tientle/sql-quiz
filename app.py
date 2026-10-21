@@ -87,7 +87,20 @@ if user is None:
             type="password"
         )
 
+        st.divider()
+
+        st.markdown("#### Grader Access")
+
+        st.info(
+            "A dedicated grader account has been created.\n\n"
+            "**Email:** grader@example.com\n\n"
+            "The password is provided separately through the private "
+            "Canvas submission."
+)
+
+
         submitted = st.form_submit_button("Sign In")
+
 
     if submitted:
         try:
