@@ -290,15 +290,15 @@ with st.expander("Show Expected SQL & Results"):
     st.write("Expected result:")
     st.write(question["expected"])
 
-    if st.button(
-        "Show Expected Output Rows",
-        key=f"expected_{question['id']}"
-    ):
-        try:
-            expected_df = run_query(question["solution"])
-            st.dataframe(expected_df, use_container_width=True)
-        except Exception as e:
-            st.error(f"Could not load expected results: {e}")
+    # if st.button(
+    #     "Show Expected Output Rows",
+    #     key=f"expected_{question['id']}"
+    # ):
+    #     try:
+    #         expected_df = run_query(question["solution"])
+    #         st.dataframe(expected_df, use_container_width=True)
+    #     except Exception as e:
+    #         st.error(f"Could not load expected results: {e}")
 
 
 
