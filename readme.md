@@ -1,24 +1,28 @@
-# Sephora SQL Lab
+# ✿ Sephora SQL Lab
 
 [![Sephora SQL Lab Tests](https://github.com/tientle/sql-quiz/actions/workflows/tests.yml/badge.svg)](https://github.com/tientle/sql-quiz/actions/workflows/tests.yml)
 
-![Sephora SQL Lab](https://img.shields.io/badge/Sephora_SQL_Lab-Interactive_Quiz-FF69B4)
+![Sephora SQL Lab](https://img.shields.io/badge/Sephora_SQL_Lab-SQL_Quiz-FF69B4)
 ![PostgreSQL](https://img.shields.io/badge/SQL-PostgreSQL-DB7093)
 ![Streamlit](https://img.shields.io/badge/Built_with-Streamlit-FFB6C1)
+![ChromaDB](https://img.shields.io/badge/RAG-ChromaDB-F4A6C1)
+![Gemini](https://img.shields.io/badge/AI-Google_Gemini-DB7093)
 
-An interactive SQL quiz application built with Python, Streamlit, PostgreSQL, and Supabase.
+An interactive SQL learning application built with Python, Streamlit, Supabase PostgreSQL, ChromaDB, and Google Gemini.
 
-Sephora SQL Lab allows students to practice SQL using real-world Sephora product and customer review data. Users can sign in, answer interview-style SQL questions, execute queries against a hosted PostgreSQL database, view live results, and save their answers.
+Sephora SQL Lab allows students to practice SQL using real-world Sephora product and customer review data. Users can answer interview-style SQL questions, execute queries against a hosted PostgreSQL database, and save their work.
+
+The application also includes a **RAG-powered AI SQL Generator** that translates natural-language questions into PostgreSQL queries using retrieved database knowledge.
 
 ## Live Application and Repository
 
-**Live Application:** [Sephora SQL Lab](https://sephora-sql-quiz.streamlit.app/)
-
-**GitHub Actions:** [View Workflow Runs](https://github.com/tientle/sql-quiz/actions)
+- **Live Application:** [Sephora SQL Lab](https://sephora-sql-quiz.streamlit.app/)
+- **GitHub Repository:** [tientle/sql-quiz](https://github.com/tientle/sql-quiz)
+- **GitHub Actions:** [View Workflow Runs](https://github.com/tientle/sql-quiz/actions)
 
 ### Grader Access
 
-The application requires authentication to access the SQL quiz.
+The application requires authentication.
 
 A dedicated account has been created for assignment evaluation.
 
@@ -26,95 +30,94 @@ A dedicated account has been created for assignment evaluation.
 - **Password:** Provided separately through the private Canvas submission
 - **Registration:** Not required
 
-The grader can use this account to sign in, access all five questions, execute SQL queries, view expected results, and save answers.
+The grader can sign in, access the five SQL questions, use the AI SQL Generator, execute SQL queries, and inspect the retrieved knowledge.
 
 The password is intentionally excluded from this public repository.
 
 ---
 
-## Project Overview
+## 1. Project Overview
 
-The goal of this project is to create an interactive SQL assessment environment similar to a classroom exercise or technical interview.
+The project began as an interactive SQL assessment environment similar to a classroom exercise or technical interview.
 
-Instead of working with static examples, students write SQL queries that execute against a live PostgreSQL database.
+Rather than working with static SQL examples, students execute queries against a live PostgreSQL database containing Sephora product and customer review data.
 
-The questions use Sephora product and customer review data to explore realistic business problems involving merchandising, customer insights, and product analytics.
+For the Week 8 extension, the application incorporates **Retrieval-Augmented Generation (RAG)** to support natural-language Text-to-SQL generation.
 
 ### Key Features
 
-- Hosted PostgreSQL database containing Sephora products and reviews
-- User authentication through Supabase Auth
-- Five SQL questions worth a total of 20 points
-- Interactive SQL editor
-- Live query execution and result tables
-- Conceptual hints and reference SQL solutions
-- Expected output rows generated from the database
-- Persistent answer storage for authenticated users
-- Database schema reference
-- Automated testing through GitHub Actions
-- Deployment through Streamlit Community Cloud
+- Hosted PostgreSQL database with Sephora products and reviews
+- Supabase authentication and persistent answer storage
+- Five SQL quiz questions worth 20 points
+- Interactive SQL editor and live query results
+- Database schema reference and conceptual hints
+- ChromaDB vector similarity retrieval
+- Google Gemini API integration
+- Natural-language to PostgreSQL SQL generation
+- Optional execution of AI-generated SQL
+- Expandable view of retrieved knowledge documents
+- GitHub Actions automated testing
+- Streamlit Community Cloud deployment
 
-## 1. Hosted Database
+---
 
-### 1.1 Database Hosting
+## 2. Hosted PostgreSQL Database
+
+### 2.1 Database Hosting
 
 The application uses PostgreSQL hosted on Supabase.
 
-Supabase provides a managed PostgreSQL instance that stores the Sephora dataset and supports SQL execution over a network connection.
+The Streamlit application connects using Python's `psycopg2` library through the Supabase Session Pooler with SSL enabled.
 
-The Streamlit application connects to PostgreSQL using Python's `psycopg2` library.
-
-The connection uses the Supabase Session Pooler with SSL enabled (`sslmode=require`).
-
-### 1.2 Dataset Overview
+### 2.2 Dataset Overview
 
 The project uses the Kaggle Sephora Products and Skincare Reviews dataset.
 
 A subset of the original data was loaded into PostgreSQL.
 
-| Table      |   Rows | Description                                                            |
-| ---------- | -----: | ---------------------------------------------------------------------- |
-| `products` |  8,494 | Product information, including brands, prices, ratings, and categories |
-| `reviews`  | 10,000 | Sampled customer reviews, ratings, recommendations, and skin types     |
+| Table      |   Rows | Description                                               |
+| ---------- | -----: | --------------------------------------------------------- |
+| `products` |  8,494 | Product names, brands, prices, ratings, and categories    |
+| `reviews`  | 10,000 | Sampled customer reviews, recommendations, and skin types |
 
 The database supports joins, aggregations, subqueries, and window functions.
 
-### 1.3 Database Schema
+### 2.3 Database Schema
 
 #### Products Table
 
-| Column               | Data Type     | Description                                 |
-| -------------------- | ------------- | ------------------------------------------- |
-| `product_id`         | TEXT          | Unique product identifier; primary key      |
-| `product_name`       | TEXT          | Product name                                |
-| `brand_name`         | TEXT          | Product brand                               |
-| `price_usd`          | NUMERIC(10,2) | Product price in US dollars                 |
-| `rating`             | NUMERIC       | Product rating                              |
-| `loves_count`        | INTEGER       | Number of user loves                        |
-| `primary_category`   | TEXT          | Primary product category                    |
-| `secondary_category` | TEXT          | Secondary product category                  |
-| `sephora_exclusive`  | BOOLEAN       | Whether the product is exclusive to Sephora |
+| Column               | Data Type     | Description                |
+| -------------------- | ------------- | -------------------------- |
+| `product_id`         | TEXT          | Primary key                |
+| `product_name`       | TEXT          | Product name               |
+| `brand_name`         | TEXT          | Product brand              |
+| `price_usd`          | NUMERIC(10,2) | Product price              |
+| `rating`             | NUMERIC       | Product rating             |
+| `loves_count`        | INTEGER       | Number of user loves       |
+| `primary_category`   | TEXT          | Primary product category   |
+| `secondary_category` | TEXT          | Secondary product category |
+| `sephora_exclusive`  | BOOLEAN       | Sephora exclusivity        |
 
 #### Reviews Table
 
-| Column            | Data Type | Description                                   |
-| ----------------- | --------- | --------------------------------------------- |
-| `review_id`       | BIGINT    | Unique review identifier; primary key         |
-| `product_id`      | TEXT      | Foreign key referencing `products.product_id` |
-| `author_id`       | TEXT      | Reviewer identifier                           |
-| `rating`          | INTEGER   | Customer rating                               |
-| `is_recommended`  | BOOLEAN   | Whether the reviewer recommends the product   |
-| `submission_time` | DATE      | Review submission date                        |
-| `review_text`     | TEXT      | Written review                                |
-| `skin_type`       | TEXT      | Customer skin type                            |
+| Column            | Data Type | Description             |
+| ----------------- | --------- | ----------------------- |
+| `review_id`       | BIGINT    | Primary key             |
+| `product_id`      | TEXT      | Foreign key to products |
+| `author_id`       | TEXT      | Reviewer identifier     |
+| `rating`          | INTEGER   | Customer rating         |
+| `is_recommended`  | BOOLEAN   | Product recommendation  |
+| `submission_time` | DATE      | Review submission date  |
+| `review_text`     | TEXT      | Written review          |
+| `skin_type`       | TEXT      | Customer skin type      |
 
-### 1.4 Table Relationships
+### 2.4 Table Relationships
 
-The database uses a one-to-many relationship between products and reviews.
+The database has a one-to-many relationship between products and reviews.
 
-Each product can have multiple reviews, and each review references a product through `product_id`.
+Each product can have multiple reviews. The tables are connected through `product_id`.
 
-Example query:
+Example:
 
 ```sql
 SELECT
@@ -127,194 +130,212 @@ GROUP BY p.brand_name
 ORDER BY review_count DESC;
 ```
 
-This query joins the tables and calculates the number of sampled reviews for each brand.
+This query calculates the number of sampled reviews for each brand.
 
-### 1.5 Database Connection and Query Execution
+### 2.5 SQL Execution and Security
 
-The `database.py` module handles database connections, SQL validation, and query execution.
+The `database.py` module manages database connections, SQL validation, and query execution.
 
-When a user submits SQL:
+The application uses a restricted PostgreSQL role named `quiz_reader`, which has SELECT permissions on the product and review tables.
 
-1. The application receives the query from the Streamlit editor.
-2. The query is passed to the database execution module.
-3. The application validates the query.
-4. A restricted PostgreSQL connection executes the query.
-5. PostgreSQL returns the result set.
-6. Streamlit displays the returned rows.
-
-The application is designed for read-only analytical queries.
-
-### 1.6 Database Security
-
-A dedicated PostgreSQL role named `quiz_reader` is used for executing quiz queries.
-
-This role has SELECT permissions on the `products` and `reviews` tables.
-
-Additional protections include:
+Additional safeguards include:
 
 - Read-only transactions
-- A five-second statement timeout
-- SQL query validation
-- A limit on returned result rows
-- Database credentials stored outside the source code
+- Five-second statement timeout
+- SQL validation using `pglast`
+- Limits on returned result rows
+- Credentials stored outside the source code
 
-These measures reduce the risk of unauthorized data modification and resource-intensive queries.
+The same query execution function is reused for AI-generated SQL.
 
-However, read-only permissions and SQL validation do not provide complete isolation for arbitrary SQL execution. Additional sandboxing would be needed for unrestricted public use.
+AI-generated SQL is treated as untrusted input. Read-only permissions and SQL validation reduce risk but do not provide complete isolation for arbitrary SQL execution.
 
 ---
 
-## 2. Authentication
+## 3. RAG-Powered AI SQL Generator
 
-### 2.1 Supabase Authentication
+### 3.1 Overview
+
+The Week 8 extension adds a natural-language interface for generating PostgreSQL queries.
+
+Users can enter questions such as:
+
+> Which brands have the most customer reviews?
+
+Instead of relying only on the language model's general knowledge, the application retrieves relevant database information from ChromaDB and includes it in the model's prompt.
+
+Gemini then generates SQL using the retrieved context.
+
+### 3.2 RAG Architecture
+
+```text
+          Natural-Language Question
+                     |
+                     v
+            ChromaDB Retrieval
+           (Vector Similarity)
+                     |
+                     v
+        Relevant Knowledge Documents
+          - Database schemas
+          - Table relationships
+          - Business rules
+          - Example SQL queries
+                     |
+                     v
+            Prompt Construction
+                     |
+                     v
+             Google Gemini API
+                     |
+                     v
+           Generated PostgreSQL SQL
+                     |
+                     v
+             Streamlit Interface
+                     |
+                     v
+          Optional SQL Execution
+                     |
+                     v
+           Supabase PostgreSQL
+                     |
+                     v
+                Results Table
+```
+
+### 3.3 Vector Database: ChromaDB
+
+The application uses ChromaDB as a persistent vector database.
+
+The knowledge base contains nine documents:
+
+| Document Type       | Count | Purpose                            |
+| ------------------- | ----: | ---------------------------------- |
+| Products schema     |     1 | Describes product columns          |
+| Reviews schema      |     1 | Describes review columns           |
+| Table relationships |     1 | Explains joins and relationships   |
+| Business rules      |     1 | Explains data interpretation       |
+| SQL quiz examples   |     5 | Provides question-and-SQL examples |
+| **Total**           | **9** |                                    |
+
+The knowledge base is created by `build_knowledge_base.py`.
+
+ChromaDB stores document embeddings and supports semantic similarity search.
+
+When a user submits a question, the application retrieves the four most relevant documents.
+
+The retrieved documents are included in the prompt sent to Gemini.
+
+This satisfies the vector retrieval requirement: the application performs an actual similarity search rather than simply appending the entire database schema to every prompt.
+
+### 3.4 AI API: Google Gemini
+
+The application uses Google's Gemini API through its OpenAI-compatible endpoint.
+
+The API client is configured in `rag.py`.
+
+The model receives:
+
+1. A system instruction describing the SQL-generation task.
+2. Retrieved database knowledge from ChromaDB.
+3. The user's natural-language question.
+
+The system prompt instructs Gemini to:
+
+- Generate PostgreSQL SQL.
+- Use documented tables and columns.
+- Avoid inventing database fields.
+- Return read-only SELECT queries.
+- Avoid Markdown formatting and explanations.
+
+The generated SQL is displayed with syntax highlighting in Streamlit.
+
+The Gemini API key and model name are configured through environment variables or deployment secrets.
+
+### 3.5 End-to-End RAG Demonstration
+
+Example user question:
+
+> Which brands have the most customer reviews?
+
+Example generated SQL:
+
+```sql
+SELECT
+    p.brand_name,
+    COUNT(*) AS review_count
+FROM products AS p
+JOIN reviews AS r
+    ON p.product_id = r.product_id
+GROUP BY p.brand_name
+ORDER BY review_count DESC;
+```
+
+For this type of question, retrieval can surface the table relationships, review schema, and relevant SQL examples.
+
+The generated SQL can then be executed against the hosted PostgreSQL database.
+
+The application also provides a **View Retrieved Knowledge** expander showing the retrieved document IDs, text, and vector distances.
+
+### 3.6 Optional SQL Execution
+
+The application extends the core Text-to-SQL workflow by allowing users to execute generated SQL.
+
+After generating a query, users can click **Run Generated SQL**.
+
+The application:
+
+1. Retrieves the generated SQL from Streamlit session state.
+2. Sends the query to the existing database execution function.
+3. Applies the database runner's read-only safeguards.
+4. Displays the returned results in a Streamlit table.
+
+This implements the optional SQL execution feature.
+
+![RAG](images/rag.png)
+
+---
+
+## 4. Authentication and Answer Persistence
+
+### 4.1 Supabase Authentication
 
 The application uses Supabase Auth for email/password authentication.
 
-Supabase manages authentication sessions and assigns each user a unique identifier.
+Users must sign in before accessing the quiz or AI SQL Generator.
 
-Users must authenticate before accessing the SQL quiz.
+### 4.2 Answer Storage
 
-### 2.2 Access Restrictions
+Saved quiz answers are stored in the Supabase `quiz_answers` table.
 
-Signed-out users cannot:
+| Column        | Description                 |
+| ------------- | --------------------------- |
+| `id`          | Unique answer identifier    |
+| `user_id`     | Authenticated user's ID     |
+| `question_id` | Corresponding quiz question |
+| `sql_answer`  | Saved SQL query             |
+| `updated_at`  | Record update timestamp     |
 
-- Access the quiz interface
-- Execute SQL queries
-- Save SQL answers
+A unique constraint on `(user_id, question_id)` allows users to update their saved answers.
 
-Signed-in users can:
+Row Level Security policies restrict users to accessing their own answers.
 
-- Select quiz questions
-- Write and execute SQL
-- View query results
-- Save answers
-- Retrieve previously saved answers
-
-The application verifies the authenticated user session before protected operations.
-
-### 2.3 Answer Storage
-
-Saved SQL answers are stored in a Supabase table named `quiz_answers`.
-
-| Column        | Description                                |
-| ------------- | ------------------------------------------ |
-| `id`          | Unique answer identifier                   |
-| `user_id`     | Authenticated user's ID                    |
-| `question_id` | Corresponding quiz question                |
-| `sql_answer`  | Saved SQL query                            |
-| `updated_at`  | Timestamp associated with the saved record |
-
-A unique constraint on `(user_id, question_id)` allows users to update their existing answers.
-
-### 2.4 Row Level Security
-
-Supabase Row Level Security (RLS) policies are enabled on `quiz_answers`.
-
-These policies restrict authenticated users to reading, inserting, and updating their own answers.
-
-Saved answers are associated with the authenticated user's ID rather than being shared across accounts.
-
-### 2.5 Answer Persistence
+### 4.3 Persistence
 
 When users click **Save Answer**, their SQL is stored in Supabase.
 
-When they sign out and return later, their previously saved answers are loaded into the editor.
+Previously saved answers are loaded when users sign in again.
 
-This allows users to resume their work across sessions.
-
-### 2.6 Grader Access
-
-A dedicated test account has been created to allow the instructor or grader to evaluate the application.
-
-**Login email:** `grader@example.com`
-
-**Password:** Provided privately through Canvas.
-
-The grader can:
-
-1. Sign in to the deployed application.
-2. Select any of the five SQL questions.
-3. Execute SQL queries against the hosted database.
-4. View live query results.
-5. Review hints and reference solutions.
-6. Display expected output rows.
-7. Save answers and verify persistence.
-
-No additional account registration is required.
+The AI SQL Generator uses Streamlit session state to preserve generated SQL and execution results during the active session.
 
 ---
 
-## 3. GitHub Actions
+## 5. SQL Quiz
 
-### 3.1 Continuous Integration Workflow
-
-The project uses GitHub Actions for automated testing.
-
-The workflow is located at:
-
-```text
-.github/workflows/tests.yml
-```
-
-The workflow runs when code is pushed to GitHub or a pull request is opened.
-
-**Workflow History:** [View GitHub Actions](https://github.com/tientle/sql-quiz/actions)
-
-### 3.2 Automated Tests
-
-The workflow performs the following checks:
-
-1. Checks out the repository.
-2. Configures Python 3.11.
-3. Installs the dependencies required for testing.
-4. Checks that the application Python files compile.
-5. Verifies that the quiz contains five questions.
-6. Confirms that question point values total 20.
-7. Checks that question IDs are unique.
-8. Verifies that required question content is present.
-9. Connects to the hosted PostgreSQL database.
-10. Confirms that the database contains 8,494 products and 10,000 reviews.
-
-These checks validate both the application structure and the hosted database connection.
-
-### 3.3 GitHub Secrets
-
-The workflow uses GitHub Repository Secrets to store database connection credentials.
-
-Configured secrets include:
-
-- `POSTGRES_DB`
-- `DB_HOST`
-- `DB_PORT`
-- `DB_SSLMODE`
-- `QUIZ_DB_USER`
-- `QUIZ_DB_PASSWORD`
-
-The workflow references these values through environment variables.
-
-No database password is committed to the repository or hardcoded in the workflow.
-
-### 3.4 Successful Workflow Verification
-
-The GitHub Actions workflow completed successfully during development.
-
-The database connection test demonstrates that the workflow can access the hosted PostgreSQL database using credentials supplied through GitHub Secrets.
-
-Workflow execution history is available in the repository's Actions tab.
-
----
-
-## 4. SQL Quiz
-
-### 4.1 Quiz Overview
+### 5.1 Quiz Overview
 
 The quiz contains five questions worth four points each, totaling 20 points.
-
-Questions increase in difficulty and cover SQL concepts commonly used in data analytics and technical interviews.
-
-Each question is framed around a business problem involving Sephora products, customer reviews, or merchandising decisions.
-
-### 4.2 Quiz Questions
 
 | Question                                 | Difficulty  | SQL Concepts                       | Points |
 | ---------------------------------------- | ----------- | ---------------------------------- | -----: |
@@ -325,187 +346,146 @@ Each question is framed around a business problem involving Sephora products, cu
 | Finding the Top Product in Each Category | Hard        | CTEs, ROW_NUMBER, window functions |      4 |
 | **Total**                                |             |                                    | **20** |
 
-### 4.3 Question Structure
-
-Each question includes:
-
-- A descriptive title
-- A difficulty level
-- A point value
-- A realistic business scenario
-- Required output columns and sorting instructions
-- A conceptual hint
-- A reference SQL solution
-- An expected result description
-- Expected output rows generated from the database
-
 Questions are defined in `questions.py`.
 
-### 4.4 Live SQL Execution
+### 5.2 Question Structure
 
-Authenticated users can write SQL queries in the Streamlit editor.
+Each question contains a title, difficulty, point value, business scenario, SQL requirements, conceptual hint, reference solution, and expected result description.
 
-Clicking **Run Query** sends the query to PostgreSQL.
+### 5.3 Using the Quiz
 
-The application displays the returned rows in an interactive table.
+1. Open the deployed Streamlit application.
+2. Sign in using an existing account.
+3. Select a question from the dropdown.
+4. Review the database schema in the sidebar.
+5. Write SQL in the editor.
+6. Click **Run Query** to execute it.
+7. Review the returned results.
+8. Click **Save Answer** to persist the query.
 
-Users can revise their SQL and rerun queries to compare results.
+The application supports hints and expected-output descriptions.
 
-### 4.5 Hints and Expected Results
+Quiz answers are not automatically graded.
 
-Each question includes two expandable reference sections.
+### 5.4 Using the AI SQL Generator
 
-#### Show Hint
-
-Displays a conceptual clue suggesting an SQL technique that may help solve the question.
-
-#### Show Expected SQL & Results
-
-Displays:
-
-- The reference SQL solution
-- A description of the expected result
-- A button to display actual expected output rows
-
-Clicking **Show Expected Output Rows** executes the reference SQL query against the hosted database and displays the results.
-
-This allows users to compare their own output with the expected output.
-
-The assignment evaluates SQL result sets rather than requiring users to reproduce the reference SQL exactly.
-
-### 4.6 How to Use the Quiz
-
-**Step 1: Open the application**
-
-Visit [Sephora SQL Lab](https://sephora-sql-quiz.streamlit.app/).
-
-**Step 2: Sign in**
-
-Enter your registered email and password.
-
-For assignment evaluation, use the dedicated grader account credentials provided through Canvas.
-
-**Step 3: Select a question**
-
-Choose one of the five questions from the dropdown menu.
-
-**Step 4: Review the schema**
-
-Use the database reference in the sidebar to inspect available tables, columns, and data types.
-
-**Step 5: Write SQL**
-
-Enter your SQL query in the editor.
-
-**Step 6: Execute the query**
-
-Click **Run Query** to execute the query and view its results.
-
-**Step 7: Save your answer**
-
-Click **Save Answer** to store your SQL query in Supabase.
-
-**Step 8: Review expected results**
-
-Expand the hint and reference solution sections as needed.
-
-Click **Show Expected Output Rows** to view the output from the reference SQL query.
-
-### 4.7 Quiz Grading
-
-The quiz is worth 20 points based on the assigned question values.
-
-The application provides reference solutions and expected results for comparison.
-
-SQL answers are saved but are not automatically graded.
+1. Sign in to Sephora SQL Lab.
+2. Scroll to **AI SQL Generator**.
+3. Enter a natural-language question about Sephora products or reviews.
+4. Click **Generate SQL**.
+5. Review the generated PostgreSQL query.
+6. Expand **View Retrieved Knowledge** to inspect the retrieved documents.
+7. Optionally click **Run Generated SQL** to execute the query and view its results.
 
 ---
 
-## 5. README and Project Documentation (15 Points)
+## 6. GitHub Actions and Testing
 
-### 5.1 Technology Stack
+### 6.1 Continuous Integration
 
-| Technology                | Purpose                         |
-| ------------------------- | ------------------------------- |
-| Python                    | Application logic               |
-| Streamlit                 | Interactive web interface       |
-| Supabase PostgreSQL       | Hosted relational database      |
-| Supabase Auth             | User authentication             |
-| psycopg2                  | PostgreSQL connectivity         |
-| Pandas                    | Handling query results          |
-| python-dotenv             | Local environment configuration |
-| GitHub                    | Version control                 |
-| GitHub Actions            | Automated testing               |
-| Streamlit Community Cloud | Application deployment          |
+The project uses GitHub Actions for automated testing.
 
-### 5.2 Application Architecture
+Workflow:
 
-The application contains four main components.
+```text
+.github/workflows/tests.yml
+```
 
-**Streamlit Frontend**
+[View GitHub Actions](https://github.com/tientle/sql-quiz/actions)
 
-Provides the login interface, question selection, SQL editor, query results, hints, and answer-saving controls.
+### 6.2 Automated Tests
 
-**Supabase Authentication**
+The existing workflow checks:
 
-Authenticates users and manages access to protected functionality.
+- Python application compilation
+- Quiz question structure
+- Five questions totaling 20 points
+- Unique question IDs
+- Required question content
+- PostgreSQL database connectivity
+- Expected product and review row counts
 
-**Supabase PostgreSQL**
+The workflow uses GitHub Repository Secrets for database credentials.
 
-Stores the Sephora product and review data, executes SQL queries, and stores saved quiz answers.
+The RAG feature was additionally tested locally by retrieving ChromaDB documents and generating SQL using Gemini.
 
-**GitHub Actions**
+### 6.3 GitHub Secrets
 
-Runs automated checks against the codebase and hosted database.
+Database connection secrets include:
 
-### 5.3 Project Structure
+- `POSTGRES_DB`
+- `DB_HOST`
+- `DB_PORT`
+- `DB_SSLMODE`
+- `QUIZ_DB_USER`
+- `QUIZ_DB_PASSWORD`
+
+Secrets are not committed to the repository.
+
+---
+
+## 7. Project Structure
 
 ```text
 sql-quiz/
 ├── .github/
 │   └── workflows/
 │       └── tests.yml
+├── screenshots/
+│   ├── sql-generation.png
+│   ├── retrieved-knowledge.png
+│   └── sql-results.png
+├── chroma_data/
 ├── app.py
 ├── database.py
 ├── questions.py
+├── rag.py
+├── build_knowledge_base.py
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
 └── .env
 ```
 
-The `.env` file is used locally and is not committed to GitHub.
+The `chroma_data/` directory contains the persistent vector database.
+
+The `.env` file stores local credentials and is excluded from GitHub.
+
+### Important Files
 
 | File                          | Purpose                                                     |
 | ----------------------------- | ----------------------------------------------------------- |
-| `app.py`                      | Streamlit interface, authentication, and answer persistence |
-| `database.py`                 | PostgreSQL connections, SQL validation, and query execution |
-| `questions.py`                | Quiz questions, hints, reference SQL, and expected results  |
+| `app.py`                      | Streamlit interface, authentication, quiz, and AI generator |
+| `database.py`                 | PostgreSQL connections, SQL validation, and execution       |
+| `questions.py`                | Quiz questions and reference SQL examples                   |
+| `rag.py`                      | Vector retrieval and Gemini SQL generation                  |
+| `build_knowledge_base.py`     | Creates and populates ChromaDB                              |
+| `chroma_data/`                | Persistent ChromaDB collection                              |
 | `requirements.txt`            | Python dependencies                                         |
-| `.github/workflows/tests.yml` | Automated testing workflow                                  |
-| `.gitignore`                  | Files excluded from version control                         |
-| `.env`                        | Local credentials                                           |
 | `README.md`                   | Project documentation                                       |
+| `.github/workflows/tests.yml` | Automated testing                                           |
 
-### 5.4 Local Setup
+---
 
-#### Prerequisites
+## 8. Local Setup
 
-- Python 3.11 or compatible version
+### 8.1 Prerequisites
+
+- Python 3.11 or a compatible version
 - Git
-- A configured Supabase project
-- PostgreSQL tables containing the Sephora data
-- Supabase authentication configuration
-- Appropriate database roles and permissions
+- Configured Supabase PostgreSQL database
+- Supabase authentication
+- Gemini API key
+- Appropriate database permissions
 
-#### Clone the Repository
+### 8.2 Clone the Repository
 
 ```bash
-git clone PASTE_YOUR_GITHUB_REPOSITORY_URL_HERE
+git clone https://github.com/tientle/sql-quiz.git
 cd sql-quiz
 ```
 
-#### Create a Virtual Environment
+### 8.3 Create a Virtual Environment
 
 On macOS or Linux:
 
@@ -521,17 +501,15 @@ python -m venv .venv
 .venv\Scripts\activate
 ```
 
-#### Install Dependencies
+### 8.4 Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5.5 Environment Variables
+### 8.5 Configure Environment Variables
 
 Create a `.env` file in the project root.
-
-Use the following template:
 
 ```dotenv
 POSTGRES_DB=postgres
@@ -547,37 +525,52 @@ SUPABASE_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
 
 QUIZ_DB_USER=quiz_reader.YOUR_PROJECT_REF
 QUIZ_DB_PASSWORD=YOUR_RESTRICTED_ROLE_PASSWORD
+
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+GEMINI_MODEL=YOUR_AVAILABLE_GEMINI_MODEL
 ```
 
-Replace the placeholders with credentials from your Supabase project.
+Use a Gemini model available to your project's API tier.
 
 The `SUPABASE_KEY` should be a publishable or anonymous client key, not a service-role key.
 
-Do not commit `.env` to GitHub.
+Never commit `.env` or API keys to GitHub.
 
-The database tables, authentication configuration, and permissions must already exist for the application to run locally.
+### 8.6 Build the Vector Knowledge Base
 
-### 5.6 Running the Application Locally
+If `chroma_data/` has not already been initialized, run:
 
-Start Streamlit:
+```bash
+python build_knowledge_base.py
+```
+
+The script indexes the database schemas, relationships, business rules, and SQL examples.
+
+Expected output:
+
+```text
+Indexed 9 knowledge documents.
+```
+
+### 8.7 Run the Application
 
 ```bash
 streamlit run app.py
 ```
 
-Streamlit typically starts the application at:
+The application typically opens at:
 
 ```text
 http://localhost:8501
 ```
 
-Open the URL in your browser to access the quiz.
+Sign in to access the SQL quiz and AI SQL Generator.
 
-### 5.7 Deployment
+---
+
+## 9. Deployment
 
 The application is deployed through Streamlit Community Cloud.
-
-Deployment configuration:
 
 | Setting      | Value              |
 | ------------ | ------------------ |
@@ -587,58 +580,79 @@ Deployment configuration:
 | Dependencies | `requirements.txt` |
 | Credentials  | Streamlit Secrets  |
 
-The deployed application connects to Supabase PostgreSQL over the network.
+The deployed app connects to Supabase PostgreSQL and the Gemini API.
 
-Sensitive credentials are stored in Streamlit Secrets rather than the repository.
+### Streamlit Secrets
 
-Updates pushed to the configured GitHub branch are reflected in the deployed application after Streamlit redeploys.
+Configure the existing Supabase and PostgreSQL credentials, plus:
 
-### 5.8 Testing and Verification
+```toml
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+GEMINI_MODEL = "YOUR_AVAILABLE_GEMINI_MODEL"
+```
 
-The following functionality was tested during development:
+Credentials must not be committed to GitHub.
 
-- User authentication through Supabase Auth
-- SQL execution against hosted PostgreSQL
-- Displaying SQL query results
-- Saving SQL answers
-- Retrieving saved answers after signing out and back in
-- Displaying conceptual hints
-- Displaying reference SQL solutions
-- Executing reference queries to display expected output rows
-- Successful GitHub Actions execution
-- Deployment to Streamlit Community Cloud
+The deployed application must also have access to the initialized ChromaDB knowledge collection.
 
-The dedicated grader account provides a way to verify these features without requiring account registration.
+Changes pushed to the configured GitHub branch trigger a Streamlit application update.
 
-Additional multi-user testing and security review would be appropriate before unrestricted public use.
+---
 
-### 5.9 Limitations
+## 10. Testing and Verification
 
-The application was developed as an educational SQL quiz rather than a production-grade SQL execution platform.
+The following features were tested during development:
 
-Current limitations include:
+- Supabase authentication
+- PostgreSQL query execution
+- SQL result display
+- Saving and retrieving quiz answers
+- Database schema reference
+- ChromaDB vector retrieval
+- Gemini API connectivity
+- End-to-end RAG SQL generation
+- Generated SQL display in Streamlit
+- Retrieved knowledge inspection
+- Existing GitHub Actions workflow
 
-- Saved SQL answers are not automatically graded.
-- The reviews table contains a sample of 10,000 reviews.
-- Expected results are generated from the current database.
+Before final submission, the deployed application should also be tested for:
+
+- Successful initialization of ChromaDB
+- Gemini SQL generation from the public Streamlit URL
+- Execution of AI-generated SQL
+- Grader account access
+
+---
+
+## 11. Limitations and Future Improvements
+
+### Current Limitations
+
+- The reviews table contains 10,000 sampled reviews.
+- AI-generated SQL may be inaccurate.
+- SQL generation depends on Gemini API availability and rate limits.
+- The AI SQL Generator does not automatically validate correctness against reference results.
 - Read-only permissions and SQL validation do not provide complete isolation for arbitrary SQL execution.
+- The SQL quiz does not automatically grade saved answers.
 
-### 5.10 Future Improvements
+### Future Improvements
 
-Potential improvements include:
-
-- Automated grading based on result-set equivalence
-- Additional SQL questions and difficulty levels
-- Student progress tracking
+- Automatic correctness comparison using expected SQL results
+- Additional few-shot SQL examples
+- Expanded database documentation and business semantics
+- More SQL questions and difficulty levels
+- Retrieval quality evaluation
+- SQL generation latency optimization
 - Instructor-facing analytics
-- Larger product and review datasets
 - Stronger SQL execution isolation
 - Query execution audit logging
 
-### 5.11 Data Source
+---
 
-Kaggle: Sephora Products and Skincare Reviews dataset.
+## 12. Data Source
 
-The data is used for educational SQL practice and analysis.
+**Dataset:** Kaggle Sephora Products and Skincare Reviews
+
+The dataset is used for educational SQL practice and analysis.
 
 ---

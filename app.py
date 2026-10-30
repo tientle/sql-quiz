@@ -8,6 +8,7 @@ from supabase import create_client
 from questions import QUESTIONS
 from database import run_query
 
+from rag import generate_sql
 
 load_dotenv()
 
@@ -430,3 +431,163 @@ st.caption(
     "Your saved answers are stored securely in Supabase "
     "and will be available when you sign in again."
 )
+
+
+# -----------------------------------
+# RAG-Powered AI SQL Generator
+# -----------------------------------
+
+st.divider()
+
+st.header("✿ AI SQL Generator")
+
+st.write(
+    "Ask a question about Sephora products or customer reviews "
+    "in everyday language. The app retrieves relevant database "
+    "knowledge using ChromaDB and uses Gemini to generate SQL."
+)
+
+natural_language_question = st.text_area(
+    "What would you like to know?",
+    placeholder="Which brands have the most customer reviews?",
+    height=100,
+    key="rag_question"
+)
+
+generate_clicked = st.button(
+    "Generate SQL ✨",
+    type="primary",
+    use_container_width=True
+)
+
+
+# -----------------------------------
+# Generate SQL using RAG
+# -----------------------------------
+
+if generate_clicked:
+
+    if authenticated_user() is None:
+        st.error("Please sign in to generate SQL.")
+
+    elif not natural_language_question.strip():
+        st.warning("Please enter a question first.")
+
+    else:
+        try:
+            with st.spinner("Retrieving knowledge and generating SQL..."):
+                generated_sql, retrieved_items = generate_sql(
+                    natural_language_question
+                )
+
+            # Save generated SQL and retrieved documents.
+            st.session_state["rag_generated_sql"] = generated_sql
+            st.session_state["rag_retrieved_items"] = retrieved_items
+            st.session_state["rag_generated_question"] = natural_language_question
+
+            # Clear results from any previously executed query.
+            st.session_state.pop("rag_query_results", None)
+            st.session_state.pop("rag_executed_sql", None)
+
+        except Exception as error:
+            st.error(f"SQL generation failed: {error}")
+
+
+# -----------------------------------
+# Display generated SQL
+# -----------------------------------
+
+if (
+    st.session_state.get("rag_generated_sql")
+    and st.session_state.get("rag_generated_question")
+    == natural_language_question
+):
+
+    st.subheader("Generated SQL")
+
+    st.code(
+        st.session_state["rag_generated_sql"],
+        language="sql"
+    )
+
+    # -----------------------------------
+    # Execute AI-generated SQL
+    # -----------------------------------
+
+    run_generated_clicked = st.button(
+        "▶ Run Generated SQL",
+        use_container_width=True,
+        key="run_generated_sql"
+    )
+
+    if run_generated_clicked:
+
+        if authenticated_user() is None:
+            st.error("Your session has expired. Please sign in again.")
+            st.stop()
+
+        try:
+            generated_query = st.session_state["rag_generated_sql"]
+
+            # Reuse the existing read-only SQL execution function.
+            with st.spinner("Executing generated SQL..."):
+                result = run_query(generated_query)
+
+            # Save results so they remain visible after reruns.
+            st.session_state["rag_query_results"] = result
+            st.session_state["rag_executed_sql"] = generated_query
+
+        except Exception as error:
+            st.session_state.pop("rag_query_results", None)
+            st.session_state.pop("rag_executed_sql", None)
+
+            st.error(f"Generated SQL could not be executed: {error}")
+
+
+    # -----------------------------------
+    # Display query results
+    # -----------------------------------
+
+    if (
+        "rag_query_results" in st.session_state
+        and st.session_state.get("rag_executed_sql")
+        == st.session_state["rag_generated_sql"]
+    ):
+
+        result = st.session_state["rag_query_results"]
+
+        st.success(
+            f"Query executed successfully! {len(result)} row(s) returned."
+        )
+
+        st.subheader("Query Results")
+
+        st.dataframe(
+            result,
+            use_container_width=True,
+            hide_index=True
+        )
+
+
+    # -----------------------------------
+    # Display retrieved ChromaDB knowledge
+    # -----------------------------------
+
+    with st.expander("View Retrieved Knowledge"):
+
+        st.caption(
+            "These documents were retrieved from ChromaDB "
+            "using vector similarity search."
+        )
+
+        for item in st.session_state["rag_retrieved_items"]:
+
+            st.markdown(f"**Document: {item['id']}**")
+
+            st.caption(
+                f"Vector distance: {item['distance']:.4f}"
+            )
+
+            st.text(item["text"])
+
+            st.divider()
